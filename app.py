@@ -5,41 +5,43 @@ from string import ascii_letters, digits
 from time import sleep
 import httpx
 import os
-from flask import Flask
+from flask import Flask, request
 
 app = Flask(__name__)
-WARP_CLIENT_ID = os.getenv('warp_id')
+warp_client_id = os.getenv('warp_id')
 
 # Defaults
-SUCCESS_COUNT, FAIL_COUNT = 0, 0
+success_count, fail_count = 0, 0
 
-def genString(stringLength):
+def generate_string(length):
   try:
-    letters = ascii_letters + digits
-    return ''.join(choice(letters) for _ in range(stringLength))
+    letters_and_digits = ascii_letters + digits
+    return ''.join(choice(letters_and_digits) for _ in range(length))
   except Exception as error_code:
     print(error_code)
 
-def digitString(stringLength):
+def generate_digit_string(length):
   try:
-    digit = digits
-    return ''.join(choice(digit) for _ in range(stringLength))
+    digits_only = digits
+    return ''.join(choice(digits_only) for _ in range(length))
   except Exception as error_code:
     print(error_code)
 
-url = f"https://api.cloudflareclient.com/v0a{digitString(3)}/reg"
+url = f"https://api.cloudflareclient.com/v0a{generate_digit_string(3)}/reg"
 
 @app.route('/')
 def add_5_gbs():
-  global SUCCESS_COUNT, FAIL_COUNT
+  client_ip = request.remote_addr  # Get the IP address of the client
+  print(f"Hit by IP: {client_ip}")
+  global success_count, fail_count
   for i in range(5):
     try:
-      install_id = genString(22)
+      install_id = generate_string(22)
       body = {
-        "key": f"{genString(43)}=",
+        "key": f"{generate_string(43)}=",
         "install_id": install_id,
-        "fcm_token": f"{install_id}:APA91b{genString(134)}",
-        "referrer": WARP_CLIENT_ID,
+        "fcm_token": f"{install_id}:APA91b{generate_string(134)}",
+        "referrer": warp_client_id,
         "warp_enabled": False,
         "tos": f"{datetime.now().isoformat()[:-3]}+02:00",
         "type": "Android",
@@ -58,11 +60,11 @@ def add_5_gbs():
       print(error_code)
 
     if response == 200:
-      SUCCESS_COUNT += 1
-      print(f"PASSED: +1GB (total: {SUCCESS_COUNT}GB, failed: {FAIL_COUNT})")
+      success_count += 1
+      print(f"PASSED: +1GB (total: {success_count}GB, failed: {fail_count})")
     else:
       print(f"FAILED: {response}")
-      FAIL_COUNT += 1
+      fail_count += 1
     
     # Cooldown
     cooldown_time = randint(30, 50)
